@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Image Compressor & Crop Tool — White Theme</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.js"></script>
+  <link href="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.css" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg-color: #f9fafb;
+      --card-bg: #ffffff;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --shadow: 0 4px 12px rgba(0,0,0,0.05);
+      --radius: 12px;
+      --transition: all 0.25s ease;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: 'Inter', sans-serif; }
+    body {
+      background: var(--bg-color);
+      color: var(--text-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 40px 20px;
+    }
+
+    .container { max-width: 1000px; width: 100%; }
+
+    .header { text-align: center; margin-bottom: 20px; }
+    h1 { font-size: 2rem; margin: 0 0 8px; }
+    .subtitle { color: var(--text-muted); }
+
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    .search-input {
+      width: 300px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px 0 0 8px;
+      outline: none;
+      font-size: 1rem;
+    }
+
+    .search-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 0 8px 8px 0;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+
+    .search-btn:hover { background: var(--accent-hover); }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      transition: var(--transition);
+    }
+
+    .grid { display: grid; grid-template-columns: 1fr 320px; gap: 24px; }
+
+    .drop {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .drop:hover { border-color: var(--accent); background: #eff6ff; }
+
+    .muted { color: var(--text-muted); }
+    .small { font-size: 0.9rem; }
+
+    .preview {
+      margin-top: 20px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 250px;
+      position: relative;
+    }
+
+    img#previewImg { max-width: 100%; max-height: 100%; display: block; }
+
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    button:hover { background: var(--accent-hover); }
+
+    select, input[type="range"], input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text-dark);
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      border-radius: var(--radius);
+    }
+
+    .row { display: flex; align-items: center; gap: 10px; }
+
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .tools-section {
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .tool-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+      transition: var(--transition);
+      box-shadow: var(--shadow);
+    }
+
+    .tool-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--accent);
+      box-shadow: 0 6px 18px rgba(37,99,235,0.1);
+    }
+
+    .tool-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; color: var(--text-dark); }
+    .tool-desc { font-size: 0.9rem; color: var(--text-muted); }
+
+    #cropBtn { background: #10b981; }
+    #cropBtn:hover { background: #059669; }
+
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🖼️ Image Compressor + Crop Tool</h1>
+      <p class="subtitle">Now crop before compressing — light, clean, and elegant.</p>
+    </div>
+
+    <div class="search-bar">
+      <input id="searchInput" class="search-input" type="text" placeholder="Search tools...">
+      <button id="searchBtn" class="search-btn">Search</button>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div id="dropzone" class="drop">
+          <div id="dropText">
+            <p>Drag & drop your image here or <label for="fileInput" style="color:var(--accent);text-decoration:underline;cursor:pointer">browse</label></p>
+            <input id="fileInput" accept="image/*" type="file" style="display:none">
+            <p class="small muted">Supports JPEG, PNG, WebP (max 50MB)</p>
+          </div>
+          <div id="preview" style="display:none">
+            <div class="preview"><img id="previewImg" alt="preview"></div>
+            <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
+              <div id="fileInfo" class="small muted"></div>
+              <div class="row">
+                <button id="cropBtn">Crop</button>
+                <a id="downloadBtn" download="compressed.jpg"><button>Download Image</button></a>
+                <a id="downloadPdfBtn"><button>Download PDF</button></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <label>Quality: <span id="qualLabel">80</span>%</label>
+        <input id="quality" type="range" min="1" max="100" value="80">
+
+        <div class="row">
+          <label style="width:90px">Format</label>
+          <select id="format">
+            <option value="auto">Auto</option>
+            <option value="image/jpeg">JPEG</option>
+            <option value="image/webp">WebP</option>
+            <option value="image/png">PNG</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label style="width:90px">Max width</label>
+          <input id="maxWidth" type="number" min="0" placeholder="(optional)">
+        </div>
+
+        <div class="row">
+          <button id="compressBtn">Compress</button>
+          <button id="resetBtn" style="background:none;border:1px solid var(--border);color:var(--text-muted)">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tools-section" id="toolsSection">
+      <div class="tool-card">
+        <div class="tool-title">📄 PDF Merger</div>
+        <div class="tool-desc">Combine multiple PDFs into one. Coming soon!</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-title">🎞️ Video Compressor</div>
+        <div class="tool-desc">Shrink videos while keeping quality. Coming soon!</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-title">🧠 AI Tools</div>
+        <div class="tool-desc">Smart compression and optimization using AI. Coming soon!</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-title">🖋️ Image Editor</div>
+        <div class="tool-desc">Crop, resize, and adjust brightness & contrast. Coming soon!</div>
+      </div>
+    </div>
+
+    <footer>✨ Built with care — now with Crop and Search support. Save as <code>index.html</code> to run offline.</footer>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const dropzone=document.getElementById('dropzone');
+    const fileInput=document.getElementById('fileInput');
+    const preview=document.getElementById('preview');
+    const previewImg=document.getElementById('previewImg');
+    const dropText=document.getElementById('dropText');
+    const fileInfo=document.getElementById('fileInfo');
+    const quality=document.getElementById('quality');
+    const qualLabel=document.getElementById('qualLabel');
+    const format=document.getElementById('format');
+    const compressBtn=document.getElementById('compressBtn');
+    const resetBtn=document.getElementById('resetBtn');
+    const downloadBtn=document.getElementById('downloadBtn');
+    const downloadPdfBtn=document.getElementById('downloadPdfBtn');
+    const maxWidth=document.getElementById('maxWidth');
+    const cropBtn=document.getElementById('cropBtn');
+    const searchBtn=document.getElementById('searchBtn');
+    const searchInput=document.getElementById('searchInput');
+    const toolsSection=document.getElementById('toolsSection');
+
+    let originalFile=null, cropper=null;
+
+    function humanSize(bytes){if(bytes===0)return'0 B';const k=1024;const i=Math.floor(Math.log(bytes)/Math.log(k));const sizes=['B','KB','MB'];return (bytes/Math.pow(k,i)).toFixed(2)+' '+sizes[i];}
+
+    dropzone.addEventListener('dragover',e=>{e.preventDefault();dropzone.style.borderColor='var(--accent)';});
+    dropzone.addEventListener('dragleave',()=>dropzone.style.borderColor='var(--border)');
+    dropzone.addEventListener('drop',e=>{e.preventDefault();handleFile(e.dataTransfer.files[0]);});
+    fileInput.addEventListener('change',e=>handleFile(e.target.files[0]));
+
+    function handleFile(file){
+      if(!file||!file.type.startsWith('image/'))return alert('Please upload an image.');
+      originalFile=file;
+      const url=URL.createObjectURL(file);
+      previewImg.src=url;
+      dropText.style.display='none';
+      preview.style.display='block';
+      fileInfo.textContent=`${file.name} — ${humanSize(file.size)} — ${file.type}`;
+      if(cropper){cropper.destroy();cropper=null;}
+    }
+
+    cropBtn.onclick=()=>{
+      if(!originalFile)return alert('Upload an image first.');
+      if(cropper){
+        const canvas=cropper.getCroppedCanvas();
+        previewImg.src=canvas.toDataURL();
+        cropper.destroy();cropper=null;
+      }else{
+        cropper=new Cropper(previewImg,{aspectRatio:NaN,viewMode:1});
+      }
+    };
+
+    quality.oninput=()=>qualLabel.textContent=quality.value;
+
+    compressBtn.onclick=async()=>{
+      if(!originalFile)return alert('Upload an image first.');
+      compressBtn.textContent='Compressing...';
+      const img=await loadImg(previewImg.src);
+      const canvas=document.createElement('canvas');
+      let w=img.width,h=img.height;
+      const mw=parseInt(maxWidth.value)||0;
+      if(mw>0&&w>mw){h=Math.round(h*(mw/w));w=mw;}
+      canvas.width=w;canvas.height=h;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      const fmt=format.value==='auto'?originalFile.type:format.value;
+      const q=parseInt(quality.value)/100;
+      const blob=await new Promise(r=>canvas.toBlob(r,fmt,fmt==='image/png'?undefined:q));
+      const url=URL.createObjectURL(blob);
+      previewImg.src=url;
+      fileInfo.textContent=`${originalFile.name} → ${humanSize(blob.size)} • ${fmt}`;
+      downloadBtn.href=url;
+      downloadBtn.download=originalFile.name.replace(/\.[^.]+$/,'')+'-compressed.'+fmt.split('/')[1];
+
+      try{
+        const {jsPDF}=window.jspdf;
+        const pdf=new jsPDF({unit:'pt',format:[w,h]});
+        pdf.addImage(canvas.toDataURL('image/jpeg',0.9),'JPEG',0,0,w,h);
+        const pdfBlob=pdf.output('blob');
+        const pdfUrl=URL.createObjectURL(pdfBlob);
+        downloadPdfBtn.href=pdfUrl;
+        downloadPdfBtn.download=originalFile.name.replace(/\.[^.]+$/,'')+'-compressed.pdf';
+      }catch(err){console.error(err);}
+      compressBtn.textContent='Compress';
+    };
+
+    resetBtn.onclick=()=>{originalFile=null;fileInput.value='';dropText.style.display='block';preview.style.display='none';previewImg.src='';fileInfo.textContent='';if(cropper){cropper.destroy();cropper=null;}};
+
+    searchBtn.onclick=()=>{
+      const term=searchInput.value.toLowerCase();
+      const cards=toolsSection.querySelectorAll('.tool-card');
+      cards.forEach(c=>{
+        const title=c.querySelector('.tool-title').textContent.toLowerCase();
+        c.style.display=title.includes(term)?'block':'none';
+      });
+    };
+
+    function loadImg(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src;});}
+  </script>
+</body>
+</html>
